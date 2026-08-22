@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Deeplink Cielo exige apenas INTERNET (ver README, seção integração). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".ByConcertsApp"
+        android:allowBackup="true"
+        android:label="By Concerts"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ByConcerts">
+
+        <!-- Exigido pela Cielo Smart para integração via URI/Deeplink. -->
+        <meta-data
+            android:name="cs_integration_type"
+            android:value="uri" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ByConcerts">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
