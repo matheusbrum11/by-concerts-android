@@ -1,5 +1,6 @@
 package com.byconcerts.payment.cielo
 
+import com.byconcerts.domain.model.PaymentCallback
 import com.byconcerts.domain.model.PaymentCode
 import com.byconcerts.domain.model.PaymentError
 import com.byconcerts.domain.model.PaymentInfo
@@ -27,30 +28,43 @@ class CieloDeeplinkGatewayTest {
     )
 
     private val codec = mockk<CieloRequestCodec> {
-        every { buildCheckoutUri(any()) } returns "lio://payment?request=abc&urlCallback=order://response"
+        every { buildCheckoutUri(any()) } returns "lio://payment?request=abc&urlCallback=order%3A%2F%2Fpayment"
     }
 
+    /** Launcher de teste: controla disponibilidade e sucesso do disparo. */
+    private fun launcher(available: Boolean = true, launches: Boolean = true) =
+        object : DeeplinkLauncher {
+            override fun launch(uri: String) = launches
+            override fun isPaymentAppAvailable() = available
+        }
+
     @Test
-    fun `app Cielo ausente retorna Error GatewayNotAvailable`() = runTest {
-        val gateway = CieloDeeplinkGateway(codec, launcher = { false }, callbackBus = CieloCallbackBus())
+    fun `app da Cielo nao instalado retorna GatewayNotAvailable sem disparar intent`() = runTest {
+        val gateway = CieloDeeplinkGateway(codec, launcher(available = false), CieloCallbackBus())
 
         val result = gateway.pay(request)
 
-        result as PaymentResult.Error
-        assertThat(result.type).isEqualTo(PaymentError.GatewayNotAvailable)
+        assertThat((result as PaymentResult.Error).type).isEqualTo(PaymentError.GatewayNotAvailable)
+    }
+
+    @Test
+    fun `falha ao disparar a intent retorna GatewayNotAvailable`() = runTest {
+        val gateway = CieloDeeplinkGateway(codec, launcher(launches = false), CieloCallbackBus())
+
+        val result = gateway.pay(request)
+
+        assertThat((result as PaymentResult.Error).type).isEqualTo(PaymentError.GatewayNotAvailable)
     }
 
     @Test
     fun `callback publicado no barramento resolve o pagamento`() = runTest {
         val bus = CieloCallbackBus()
-        val gateway = CieloDeeplinkGateway(codec, launcher = { true }, callbackBus = bus)
-        val approved = PaymentResult.Approved(
-            PaymentInfo("A", "N", "VISA", "**** 1", 10000),
-        )
+        val gateway = CieloDeeplinkGateway(codec, launcher(), bus)
+        val approved = PaymentResult.Approved(PaymentInfo("A", "N", "VISA", "**** 1", 10000))
 
         val deferred = async { gateway.pay(request) }
         runCurrent() // pay() arma o barramento e fica aguardando
-        bus.publish(approved)
+        bus.publish(PaymentCallback(reference = "key-1", result = approved))
 
         assertThat(deferred.await()).isEqualTo(approved)
     }
@@ -59,8 +73,8 @@ class CieloDeeplinkGatewayTest {
     fun `sem callback dentro do timeout retorna Error Timeout`() = runTest {
         val gateway = CieloDeeplinkGateway(
             codec,
-            launcher = { true },
-            callbackBus = CieloCallbackBus(),
+            launcher(),
+            CieloCallbackBus(),
             timeoutMillis = 1_000,
         )
 
@@ -68,8 +82,6 @@ class CieloDeeplinkGatewayTest {
         advanceTimeBy(1_001)
         runCurrent()
 
-        val result = deferred.await()
-        result as PaymentResult.Error
-        assertThat(result.type).isEqualTo(PaymentError.Timeout)
+        assertThat((deferred.await() as PaymentResult.Error).type).isEqualTo(PaymentError.Timeout)
     }
 }

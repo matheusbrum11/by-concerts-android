@@ -11,6 +11,7 @@ val checkoutModule = module {
             eventId = eventId,
             quantity = quantity,
             observeEvent = get(),
+            observePurchase = get(),
             createPendingPurchase = get(),
             buildPaymentRequest = get(),
             reconcilePayment = get(),

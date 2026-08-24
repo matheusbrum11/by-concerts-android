@@ -33,7 +33,7 @@ fun CheckoutRoute(
     quantity: Int,
     onBack: () -> Unit,
     onOpenReceipt: (String) -> Unit,
-    viewModel: CheckoutViewModel = koinViewModel { parametersOf(eventId, quantity) },
+    viewModel: CheckoutViewModel = koinViewModel(key = "$eventId/$quantity") { parametersOf(eventId, quantity) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
@@ -74,18 +74,14 @@ internal fun CheckoutScreen(
 
                 MnsText(text = "Forma de pagamento", style = MnsTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PaymentOption(
-                        label = "Crédito à vista",
-                        selected = state.paymentCode == PaymentCode.CREDITO_AVISTA,
-                        enabled = state.isPayEnabled,
-                        onClick = { onIntent(CheckoutIntent.PaymentCodeChanged(PaymentCode.CREDITO_AVISTA)) },
-                    )
-                    PaymentOption(
-                        label = "Débito",
-                        selected = state.paymentCode == PaymentCode.DEBITO_AVISTA,
-                        enabled = state.isPayEnabled,
-                        onClick = { onIntent(CheckoutIntent.PaymentCodeChanged(PaymentCode.DEBITO_AVISTA)) },
-                    )
+                    PaymentCode.selectableInCheckout.forEach { code ->
+                        PaymentOption(
+                            label = code.label(),
+                            selected = state.paymentCode == code,
+                            enabled = state.isPayEnabled,
+                            onClick = { onIntent(CheckoutIntent.PaymentCodeChanged(code)) },
+                        )
+                    }
                 }
 
                 StatusArea(state.phase)
@@ -111,6 +107,14 @@ private fun SummaryRow(label: String, value: String) {
         MnsText(text = label, style = MnsTheme.typography.bodyMedium)
         MnsText(text = value, style = MnsTheme.typography.bodyMedium)
     }
+}
+
+/** Rótulo amigável para os meios oferecidos no checkout. */
+private fun PaymentCode.label(): String = when (this) {
+    PaymentCode.CREDITO_AVISTA -> "Crédito"
+    PaymentCode.DEBITO_AVISTA -> "Débito"
+    PaymentCode.PIX -> "Pix"
+    else -> wireValue
 }
 
 @Composable

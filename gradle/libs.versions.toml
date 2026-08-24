@@ -10,18 +10,23 @@ agp = "8.9.1"
 kotlin = "2.1.10"
 ksp = "2.1.10-1.0.29"
 
-# SDK — compileSdk 35 casa com o DS e o Compose BOM; targetSdk 34 conforme o case;
-# minSdk 24 conforme o case e o DS.
-compileSdk = "35"
+# SDK — compileSdk 36 é exigido pelo Compose 1.9.x (transitivo do Navigation 3) e
+# é suportado pelo AGP 8.9.1 (o mesmo do design system, mantendo o composite build).
+# targetSdk 34 conforme o case; minSdk 24 conforme o case e o DS.
+compileSdk = "36"
 minSdk = "24"
 targetSdk = "34"
 
 # AndroidX
 coreKtx = "1.15.0"
-lifecycle = "2.8.7"
+# Compose 1.9.5 (BOM 2025.11.01) e lifecycle 2.10.0 são o mínimo exigido pela
+# cadeia transitiva do Navigation 3 (1.1.6) e ainda são compatíveis com AGP 8.9.1
+# (compileSdk 36) — o mesmo AGP do design system, preservando o composite build.
+# O DS compila com o próprio catálogo (Compose 1.7) e roda forward-compatible.
+lifecycle = "2.10.0"
 activityCompose = "1.9.3"
-navigationCompose = "2.8.5"
-composeBom = "2024.12.01"
+composeBom = "2025.11.01"
+navigation3 = "1.1.6"
 
 # Kotlin ecosystem
 kotlinxSerialization = "1.7.3"
@@ -55,7 +60,12 @@ androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtim
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+
+# ── Navigation 3 (type-safe: back stack de chaves tipadas) ────────────────────
+# Sem lifecycle-viewmodel-navigation3: esse artefato só existe a partir de 2.11.0,
+# que exige AGP 9.1. O scoping de ViewModel por destino é feito via koinViewModel(key).
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 
 # ── Compose (via BOM) ────────────────────────────────────────────────────────
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -65,6 +75,10 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+# O design system usa Icons.Filled.* (MnsTopBar etc). A partir do Compose 1.9 o
+# material3 não puxa mais material-icons transitivamente, então declaramos
+# explicitamente nos consumidores do DS (versão vem do BOM: 1.7.8, congelada).
+compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 
 # ── Kotlin ───────────────────────────────────────────────────────────────────
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

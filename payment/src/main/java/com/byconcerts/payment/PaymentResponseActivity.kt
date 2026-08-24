@@ -3,23 +3,26 @@ package com.byconcerts.payment
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import com.byconcerts.payment.cielo.CieloCallbackBus
-import com.byconcerts.payment.cielo.CieloResponseParser
+import com.byconcerts.payment.cielo.PaymentCallbackHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 /**
- * Activity que recebe o callback do deeplink da Cielo (order://response). Faz o
- * parse do parâmetro `response`, publica o [com.byconcerts.domain.model.PaymentResult]
- * no barramento (retomando o gateway suspenso) e finaliza, devolvendo o usuário
- * à tela de checkout.
+ * Recebe o callback do deeplink da Cielo (`order://payment`), declarada no
+ * manifest com `<data android:scheme="order" android:host="payment"/>`.
  *
- * Declarada como exported com intent-filter (host=response, scheme=order) —
- * ver AndroidManifest do módulo.
+ * Não tem UI: delega ao [PaymentCallbackHandler] (parse → concilia/persiste →
+ * publica) e finaliza, devolvendo o usuário à tela de checkout.
+ *
+ * A conciliação roda em um escopo de APLICAÇÃO, não no da Activity: o `finish()`
+ * é imediato e o trabalho de persistir o desfecho não pode ser cancelado junto
+ * — é justamente ele que garante que a compra não fique órfã em PENDING.
  */
 class PaymentResponseActivity : Activity() {
 
-    private val parser: CieloResponseParser by inject()
-    private val callbackBus: CieloCallbackBus by inject()
+    private val callbackHandler: PaymentCallbackHandler by inject()
+    private val appScope: CoroutineScope by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,13 +32,14 @@ class PaymentResponseActivity : Activity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleCallback(intent)
         finish()
     }
 
     private fun handleCallback(intent: Intent?) {
         if (intent?.action != Intent.ACTION_VIEW) return
-        val response = intent.data?.getQueryParameter("response")
-        callbackBus.publish(parser.parse(response))
+        val data = intent.data ?: return
+        appScope.launch { callbackHandler.handle(data) }
     }
 }

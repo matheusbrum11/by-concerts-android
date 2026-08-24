@@ -8,13 +8,21 @@ import com.byconcerts.payment.gateway.PaymentGateway
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Implementação principal do [PaymentGateway]: integração Cielo via DEEPLINK.
- * O app NÃO embarca o SDK da Cielo — apenas dispara uma Intent e aguarda o
- * callback, por isso não herda a restrição de targetSdk 29 do SDK embarcado.
+ * Implementação principal do [PaymentGateway]: integração Cielo via DEEPLINK,
+ * conforme o sample oficial da Cielo.
  *
- * Fluxo: monta a URI → arma o barramento de callback → dispara a intent →
- * suspende até o callback (com timeout). Falha de disparo (app Cielo ausente)
- * e timeout viram [PaymentError] explícitos.
+ * O app NÃO embarca o SDK da Cielo — apenas dispara uma Intent
+ * (`lio://payment`) e aguarda o callback (`order://payment`), por isso não
+ * herda a restrição de targetSdk 29 do modelo de SDK embarcado.
+ *
+ * Fluxo: verifica disponibilidade → arma o barramento → dispara a intent →
+ * suspende até o callback (com timeout). Falha de disparo (app da Cielo
+ * ausente) e timeout viram [PaymentError] explícitos.
+ *
+ * Importante: este `await` é só o caminho "app vivo". A persistência do
+ * desfecho é feita por [PaymentCallbackHandler] no momento do callback, de modo
+ * que um timeout aqui NÃO significa que o pagamento não ocorreu — a compra
+ * segue PENDING e é conciliada pelo `reference` assim que o retorno chega.
  */
 class CieloDeeplinkGateway(
     private val codec: CieloRequestCodec,
@@ -23,26 +31,29 @@ class CieloDeeplinkGateway(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
 ) : PaymentGateway {
 
-    override suspend fun pay(request: PaymentRequest): PaymentResult {
-        val deferred = callbackBus.arm()
-        val launched = launcher.launch(codec.buildCheckoutUri(request))
-        if (!launched) {
-            callbackBus.publish(PaymentResult.Error(PaymentError.GatewayNotAvailable))
-            return PaymentResult.Error(PaymentError.GatewayNotAvailable)
-        }
-        return withTimeoutOrNull(timeoutMillis) { deferred.await() }
-            ?: PaymentResult.Error(PaymentError.Timeout)
-    }
+    override suspend fun pay(request: PaymentRequest): PaymentResult =
+        dispatch(codec.buildCheckoutUri(request))
 
-    override suspend fun cancel(request: CancellationRequest): PaymentResult {
-        val deferred = callbackBus.arm()
-        val launched = launcher.launch(codec.buildReversalUri(request))
-        if (!launched) {
-            callbackBus.publish(PaymentResult.Error(PaymentError.GatewayNotAvailable))
+    override suspend fun cancel(request: CancellationRequest): PaymentResult =
+        dispatch(codec.buildReversalUri(request))
+
+    private suspend fun dispatch(uri: String): PaymentResult {
+        if (!launcher.isPaymentAppAvailable()) {
             return PaymentResult.Error(PaymentError.GatewayNotAvailable)
         }
-        return withTimeoutOrNull(timeoutMillis) { deferred.await() }
-            ?: PaymentResult.Error(PaymentError.Timeout)
+
+        val deferred = callbackBus.arm()
+        if (!launcher.launch(uri)) {
+            callbackBus.cancel()
+            return PaymentResult.Error(PaymentError.GatewayNotAvailable)
+        }
+
+        val callback = withTimeoutOrNull(timeoutMillis) { deferred.await() }
+        if (callback == null) {
+            callbackBus.cancel()
+            return PaymentResult.Error(PaymentError.Timeout)
+        }
+        return callback.result
     }
 
     private companion object {

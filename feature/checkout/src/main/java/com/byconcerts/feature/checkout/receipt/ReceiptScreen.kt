@@ -30,7 +30,7 @@ import org.koin.core.parameter.parametersOf
 fun ReceiptRoute(
     purchaseId: String,
     onDone: () -> Unit,
-    viewModel: ReceiptViewModel = koinViewModel { parametersOf(purchaseId) },
+    viewModel: ReceiptViewModel = koinViewModel(key = purchaseId) { parametersOf(purchaseId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ReceiptScreen(state = state, onDone = onDone)

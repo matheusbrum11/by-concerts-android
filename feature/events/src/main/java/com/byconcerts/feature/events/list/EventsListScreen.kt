@@ -53,7 +53,14 @@ internal fun EventsListScreen(
     onIntent: (EventsIntent) -> Unit,
 ) {
     MnsScaffold(
-        topBar = { MnsTopBar(title = "Eventos", subtitle = "Ingressos para eventos locais") },
+        topBar = {
+            MnsTopBar(
+                title = "Eventos",
+                subtitle = "Ingressos para eventos locais",
+                containerColor = MnsTheme.colors.primary,
+                contentColor = MnsTheme.colors.onPrimary,
+            )
+        },
     ) { padding ->
         Box(
             modifier = Modifier

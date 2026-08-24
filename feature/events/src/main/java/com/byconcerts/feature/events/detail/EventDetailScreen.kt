@@ -37,7 +37,7 @@ fun EventDetailRoute(
     eventId: String,
     onBack: () -> Unit,
     onOpenCheckout: (eventId: String, quantity: Int) -> Unit,
-    viewModel: EventDetailViewModel = koinViewModel { parametersOf(eventId) },
+    viewModel: EventDetailViewModel = koinViewModel(key = eventId) { parametersOf(eventId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {

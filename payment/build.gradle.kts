@@ -16,6 +16,8 @@ val localProps = Properties().apply {
 }
 val cieloClientId: String = localProps.getProperty("CIELO_CLIENT_ID") ?: ""
 val cieloAccessToken: String = localProps.getProperty("CIELO_ACCESS_TOKEN") ?: ""
+// Opcional: só é usado em cenários multi-estabelecimento.
+val cieloMerchantCode: String = localProps.getProperty("CIELO_MERCHANT_CODE") ?: ""
 
 android {
     namespace = "com.byconcerts.payment"
@@ -27,6 +29,7 @@ android {
 
         buildConfigField("String", "CIELO_CLIENT_ID", "\"$cieloClientId\"")
         buildConfigField("String", "CIELO_ACCESS_TOKEN", "\"$cieloAccessToken\"")
+        buildConfigField("String", "CIELO_MERCHANT_CODE", "\"$cieloMerchantCode\"")
     }
 
     buildFeatures { buildConfig = true }

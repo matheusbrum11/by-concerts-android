@@ -1,18 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      Visibilidade de pacotes (Android 11+ / targetSdk 30+): sem esta declaração
+      o `resolveActivity` não enxerga o app de pagamento da Cielo, mesmo que ele
+      esteja instalado, e a detecção de "Cielo não instalada" daria falso negativo.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="lio" />
+        </intent>
+    </queries>
+
     <application>
-        <!-- Contrato de resposta do deeplink Cielo: order://response -->
+        <!--
+          Contrato de resposta do deeplink: order://payment
+          (mesmo host usado pelo sample oficial da Cielo). Mantemos também
+          order://response, contrato citado no material de integração, para que
+          ambos os retornos sejam aceitos.
+
+          singleTask: o retorno cai na task do nosso app; ao finalizar, o usuário
+          volta para a tela de checkout que estava embaixo na pilha.
+        -->
         <activity
             android:name=".PaymentResponseActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:noHistory="true"
+            android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:host="response" android:scheme="order" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="order" android:host="payment" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="order" android:host="response" />
             </intent-filter>
         </activity>
     </application>

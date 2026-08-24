@@ -3,7 +3,7 @@ package com.byconcerts.tickets
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.byconcerts.tickets.navigation.AppNavHost
+import com.byconcerts.tickets.navigation.AppNavDisplay
 import com.mns.designsystem.theme.MnsTheme
 
 class MainActivity : ComponentActivity() {
@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MnsTheme {
-                AppNavHost()
+                AppNavDisplay()
             }
         }
     }

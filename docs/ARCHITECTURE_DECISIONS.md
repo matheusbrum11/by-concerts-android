@@ -103,3 +103,141 @@ entre versões do AGP e quebra o sync). Compila com tokens vazios.
 condicional (não decrementa abaixo de zero).
 **Consequências:** simples e sem "vazamento" de estoque reservado; aceita uma
 janela de corrida teórica sob altíssima concorrência (fora do escopo do case).
+
+---
+
+## ADR-012 — Conciliação do callback persistida (resiliência a morte de processo)
+
+**Contexto:** no modelo deeplink o app sai de foreground enquanto o app da Cielo
+processa o pagamento. A própria documentação alerta que o retorno pode falhar se
+o app for encerrado nesse intervalo (e sugere foreground service). Se o desfecho
+dependesse apenas do `CompletableDeferred` em memória, um processo morto
+deixaria a compra órfã em PENDING — cobrada, sem registro.
+
+**Decisão:** o callback é processado por `PaymentCallbackHandler`, que faz
+*parse → concilia pelo `reference` → **persiste** → publica no barramento*, em um
+**escopo de aplicação** (a Activity de callback finaliza imediatamente). O
+`CheckoutViewModel` passa a **observar a compra do Room**; o retorno do
+`gateway.pay()` vira apenas o atalho do caminho feliz.
+
+**Consequências:**
+- O desfecho sobrevive à morte do processo (verificado com `am force-stop` +
+  entrega do callback: a compra foi de PENDING para APPROVED e o estoque baixou).
+- O desfecho pode chegar por dois caminhos (Room + retorno do gateway); como
+  `ReconcilePaymentUseCase` é idempotente, o segundo é no-op, e o ViewModel
+  guarda a navegação para emitir `OpenReceipt` uma única vez.
+- Um timeout no gateway **não** significa que o pagamento não ocorreu — a compra
+  segue PENDING e é conciliada quando o retorno chegar.
+
+---
+
+## ADR-013 — Contrato Cielo derivado dos samples oficiais
+
+**Contexto:** a página "Deep Link: exemplo de código" não traz o payload; ela
+aponta para dois repositórios de exemplo (um deles na org DeveloperCielo), que
+são a especificação executável do contrato.
+
+**Decisão:** modelar request/response a partir desses samples, e não do exemplo
+resumido do enunciado. Diferenças que isso corrigiu:
+
+| Item | Suposição inicial | Contrato real |
+|---|---|---|
+| Sucesso | envelope com `payments[]` | **Order na raiz** (`reference`, `status`, `paidAmount`…) |
+| Erro | `{code, reason}` | `{code, reason, **order**}` |
+| Sucesso × erro | via `statusCode` | query param **`responsecode`** |
+| `statusCode` | `Int` | **String** |
+| `value` | string | **numérico** (centavos) |
+| Request | sem `merchantCode` | tem `merchantCode` |
+| URI | concatenação | **`Uri.Builder`** (Base64 tem `+`, `/`, `=`) |
+| Callback host | `response` | `payment` (aceitamos ambos) |
+
+**Consequências:** o parser aceita campos desconhecidos (`ignoreUnknownKeys`) e
+`statusCode` como string ou número, para não quebrar quando a Cielo evoluir o
+payload. O `<queries>` do Android 11+ foi adicionado para a detecção de "app não
+instalado" funcionar de verdade.
+
+---
+
+## ADR-014 — Discriminação sucesso/erro do callback é estrutural, não por `responsecode`
+
+**Contexto:** o sample oficial (Flutter) decide o desfecho pela presença do
+query param `responsecode` na URI de callback (`if responsecode != null →
+sucesso`). A primeira implementação seguiu isso.
+
+**Problema observado** (emulador oficial da Cielo v1.61.8, cenário "Cancelado"):
+
+```
+order://payment?response=eyJjb2RlIjoxLCJyZWFzb24iOiJDQU5DRUxBRE8g…J9⏎&responsecode=0
+                                                                    ↑ \n literal na URI
+```
+
+O cancelamento **também** traz `responsecode=0`. Com a regra do sample, o
+payload `{"code":1,"reason":"CANCELADO PELO USUÁRIO"}` era interpretado como
+Order de sucesso; como `ignoreUnknownKeys` descarta `code`/`reason`, virava uma
+Order vazia sem `payments[]` → `InvalidResponse`. Um **cancelamento aparecia
+como erro genérico**.
+
+**Decisão:** discriminar pela ESTRUTURA do payload — `code`/`reason` ⇒ envelope
+de falha; caso contrário, Order. O `responsecode` é ignorado.
+
+**Consequências:** cancelamento e erro passam a mapear corretamente
+(`Canceled` / `Denied`). Há teste de regressão com a URI real capturada do
+emulador (com o `\n` e o `responsecode=0`). Também confirmou-se por que o sample
+sanitiza `\n`: o Base64 chega quebrado dentro da própria URI.
+
+---
+
+## ADR-015 — Retry reusa a chave só enquanto PENDING
+
+**Contexto:** o retry deve reaproveitar a chave de idempotência para não gerar
+segunda cobrança. Mas a primeira implementação reusava a compra **sempre**.
+
+**Problema:** após um desfecho **terminal** (negado/cancelado), reusar a mesma
+chave fazia a conciliação virar no-op (a compra já está em estado final) — o
+usuário ficava preso no resultado antigo, sem conseguir comprar de novo.
+
+**Decisão:** reusar a compra apenas enquanto `isPending`; após um desfecho
+terminal, uma nova tentativa cria uma nova compra com nova chave.
+
+**Consequências:** preserva a proteção onde ela importa (tentativa em aberto,
+possível cobrança pendente do outro lado) sem travar o fluxo. Verificado no
+device: DENIED seguido de retry gerou chave nova e APPROVED, com baixa de
+estoque só na aprovação. Complemento: o fim de uma tentativa nunca deixa a UI em
+`Processing` (senão o botão ficaria travado se o desfecho voltasse sem motivo).
+
+---
+
+## ADR-010 — Navigation 3 com rotas type-safe
+
+**Contexto:** requisito de migrar para Navigation 3 e trocar rotas por strings
+por rotas type-safe.
+**Decisão:** usar `androidx.navigation3` (`NavDisplay` + `entryProvider` +
+`rememberNavBackStack`). Cada destino é uma chave `@Serializable` que implementa
+`NavKey`; os argumentos são propriedades tipadas da chave. Navegar = `add(Key)`,
+voltar = `removeLastOrNull()`.
+**Consequências:** type-safety garantida pelo compilador (sem placeholders de
+string nem casts de argumentos); back stack observável e testável. O scoping de
+ViewModel por destino usa `koinViewModel(key=...)` porque o decorator oficial
+(`lifecycle-viewmodel-navigation3`) exige AGP 9.1 (ver ADR-011).
+
+---
+
+## ADR-011 — Bump mínimo de toolchain para o Navigation 3 (preservando o composite build)
+
+**Contexto:** o Navigation 3 estável (1.1.6) exige, na cadeia transitiva, Compose
+≥ 1.9.5 e lifecycle ≥ 2.10 (compileSdk 36). As versões mais novas (lifecycle 2.11
+/ Compose 1.10) exigem **AGP 9.1 / compileSdk 37**, o que quebraria o composite
+build do design system (fixado em AGP 8.9.1).
+**Decisão:** adotar o conjunto **mínimo** compatível com AGP 8.9.1: `compileSdk 36`,
+Compose **1.9.5** (BOM 2025.11.01), lifecycle **2.10.0**; **não** usar
+`lifecycle-viewmodel-navigation3` (que puxaria AGP 9.1).
+**Consequências:**
+- O design system continua compilando com o próprio catálogo (Compose 1.7) via
+  composite build e roda **forward-compatible** sobre o Compose 1.9.5 do app.
+- A partir do Compose 1.9 o `material3` não puxa mais `material-icons`
+  transitivamente. Como o design system usa `Icons.Filled.*` (ex.: MnsTopBar),
+  foi necessário declarar `androidx.compose.material:material-icons-core`
+  explicitamente nos módulos que consomem o DS (versão 1.7.8, congelada, vinda do
+  BOM). **Esse crash de runtime (`NoClassDefFoundError: Icons$Filled`) foi
+  capturado pelo Compose UI test** antes de chegar ao app — evidência do valor do
+  teste de UI sobre o design system.
