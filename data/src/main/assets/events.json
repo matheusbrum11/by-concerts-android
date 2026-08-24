@@ -1,0 +1,46 @@
+[
+  {
+    "id": "evt-rock-na-praca",
+    "title": "Rock na Praça",
+    "venue": "Praça Central",
+    "city": "São Paulo",
+    "dateEpochMillis": 1789254000000,
+    "unitPriceInCents": 12000,
+    "availableQuantity": 120,
+    "imageUrl": "https://static.vecteezy.com/ti/vetor-gratis/p1/4306099-rock-music-banner-with-electric-guitar-vetor.jpg",
+    "description": "Uma noite de rock independente com bandas locais no coração da cidade."
+  },
+  {
+    "id": "evt-samba-de-raiz",
+    "title": "Samba de Raiz",
+    "venue": "Casa do Choro",
+    "city": "Rio de Janeiro",
+    "dateEpochMillis": 1791064800000,
+    "unitPriceInCents": 8000,
+    "availableQuantity": 60,
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBbL977_scl75Q4rfj6cpjj6nTak6OR0tQnhGldJAHA&s=10",
+    "description": "Roda de samba tradicional com participação especial de mestres do gênero."
+  },
+  {
+    "id": "evt-festival-eletronico",
+    "title": "Festival Eletrônico",
+    "venue": "Galpão Norte",
+    "city": "Belo Horizonte",
+    "dateEpochMillis": 1795215600000,
+    "unitPriceInCents": 25000,
+    "availableQuantity": 3,
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMB7_TV06EIlwvWQl0XBmmpVDOohAzO1072AL1vkiabZekJrh-4Xj_tfo&s=10",
+    "description": "Line-up de DJs nacionais e internacionais. Últimos ingressos disponíveis."
+  },
+  {
+    "id": "evt-mpb-ao-vivo",
+    "title": "MPB ao Vivo",
+    "venue": "Teatro Municipal",
+    "city": "Curitiba",
+    "dateEpochMillis": 1796504400000,
+    "unitPriceInCents": 45000,
+    "availableQuantity": 0,
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTEg6GS6gfNAu3Xh0ksfgRFOI73rqkxF9MsLDv9lnffb-1CnvUsoXKGWJ3&s=10",
+    "description": "Grandes clássicos da MPB em uma apresentação intimista. Ingressos esgotados."
+  }
+]

@@ -1,0 +1,7 @@
+## Copie para `local.properties` e preencha. `local.properties` é ignorado pelo git.
+sdk.dir=/CAMINHO/PARA/Android/sdk
+
+## Credenciais da Cielo (geradas manualmente pelo desenvolvedor no portal Cielo).
+## Injetadas em BuildConfig do módulo :payment via build.gradle.kts.
+CIELO_CLIENT_ID=seu_client_id_aqui
+CIELO_ACCESS_TOKEN=seu_access_token_aqui

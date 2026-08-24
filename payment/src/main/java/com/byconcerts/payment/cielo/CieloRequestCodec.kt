@@ -1,0 +1,75 @@
+package com.byconcerts.payment.cielo
+
+import android.net.Uri
+import android.util.Base64
+import com.byconcerts.domain.model.CancellationRequest
+import com.byconcerts.domain.model.PaymentRequest
+import kotlinx.serialization.json.Json
+
+class CieloRequestCodec(
+    private val json: Json,
+    private val credentials: CieloCredentials,
+) {
+
+    fun buildCheckoutUri(request: PaymentRequest): String {
+        val dto = CieloRequestDto(
+            accessToken = credentials.accessToken,
+            clientId = credentials.clientId,
+            reference = request.reference,
+            email = request.email,
+            installments = request.installments,
+            items = request.items.map {
+                CieloItemDto(
+                    name = it.name,
+                    quantity = it.quantity,
+                    sku = it.sku,
+                    unitOfMeasure = it.unitOfMeasure,
+                    unitPrice = it.unitPriceInCents,
+                )
+            },
+            merchantCode = request.merchantCode.ifEmpty { credentials.merchantCode },
+            paymentCode = request.paymentCode.wireValue,
+            value = request.totalInCents,
+        )
+        return buildUri(AUTHORITY_PAYMENT, json.encodeToString(CieloRequestDto.serializer(), dto))
+    }
+
+    fun buildReversalUri(request: CancellationRequest): String {
+        val dto = CieloReversalRequestDto(
+            id = request.purchaseId,
+            clientId = credentials.clientId,
+            accessToken = credentials.accessToken,
+            cieloCode = request.cieloCode,
+            authCode = request.authCode,
+            value = request.totalInCents,
+        )
+        return buildUri(
+            AUTHORITY_REVERSAL,
+            json.encodeToString(CieloReversalRequestDto.serializer(), dto),
+        )
+    }
+
+    private fun buildUri(authority: String, payload: String): String {
+        val base64 = Base64.encodeToString(payload.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        return Uri.Builder()
+            .scheme(SCHEME)
+            .authority(authority)
+            .appendQueryParameter(PARAM_REQUEST, base64)
+            .appendQueryParameter(PARAM_URL_CALLBACK, CALLBACK_URL)
+            .build()
+            .toString()
+    }
+
+    companion object {
+        const val SCHEME = "lio"
+        const val AUTHORITY_PAYMENT = "payment"
+        const val AUTHORITY_REVERSAL = "payment-reversal"
+
+        const val CALLBACK_SCHEME = "order"
+        const val CALLBACK_HOST = "payment"
+        const val CALLBACK_URL = "$CALLBACK_SCHEME://$CALLBACK_HOST"
+
+        private const val PARAM_REQUEST = "request"
+        private const val PARAM_URL_CALLBACK = "urlCallback"
+    }
+}
