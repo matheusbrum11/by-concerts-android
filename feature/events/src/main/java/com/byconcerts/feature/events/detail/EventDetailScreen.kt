@@ -84,7 +84,7 @@ internal fun EventDetailScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                MnsCover(painter = null, contentDescription = event.title)
+                MnsCover(painter = null, contentDescription = event.title, imageUrl = event.imageUrl)
                 MnsHeading(
                     text = event.title,
                     level = MnsHeadingLevel.H1,

@@ -74,11 +74,37 @@ exigido pelo case.
 
 ## Validação (o que dá confiança na saída da IA)
 
-- `:app:assembleDebug` verde (app compila e empacota, consumindo o DS via
-  composite build).
+- `:app:assembleDebug` verde (app compila e empacota).
 - Suíte de testes verde cobrindo: idempotência (duplo clique + callback repetido
   + UNIQUE), mapeamento Cielo (sucesso/PIX/parcial/erro/cancelamento/inválido),
   transições MVI (Turbine), Room in-memory e um Compose UI test (Robolectric).
+
+### Integração contínua como verificação independente
+
+O ponto mais frágil de um projeto escrito com auxílio de IA é a possibilidade de
+o código "parecer certo" e passar despercebido em leitura. A malha de defesa
+contra isso não é a revisão da própria IA — é uma verificação que **não depende
+dela nem da máquina em que ela rodou**.
+
+Por isso o `.github/workflows/ci.yml` executa `assembleDebug` + `test` em todo
+pull request para `main`. O que essa esteira acrescenta, concretamente:
+
+- **Tira a validação da máquina do autor.** Todo "está verde" registrado neste
+  documento foi obtido localmente. O CI reexecuta em runner limpo, sem
+  `local.properties`, sem credenciais Cielo, sem SDK pré-configurado, sem cache
+  quente — o que transforma "compila aqui" em "compila em qualquer lugar".
+- **Torna a suíte obrigatória, não decorativa.** Os testes deixam de ser um
+  anexo do PR e passam a ser condição para o merge.
+- **Fecha o ciclo que este documento descreve.** Vários bugs relatados aqui
+  foram encontrados pelos testes (retry após desfecho terminal, fase presa em
+  `Processing`, `NoClassDefFoundError: Icons$Filled`). O CI garante que essas
+  regressões continuem sendo pegas depois que a sessão com a IA terminar.
+
+Vale registrar a honestidade do escopo: a esteira **não** roda testes
+instrumentados nem gate de cobertura. Isso é deliberado — a suíte inteira já roda
+na JVM (Compose test via Robolectric), então o CI é rápido e não flaky; e CI não
+está entre os critérios de avaliação do case, então não faria sentido investir
+além do que efetivamente protege o código.
 
 ## Refatoração posterior: Navigation 3 + splash + visual
 

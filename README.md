@@ -1,5 +1,7 @@
 # By Concerts — Venda de Ingressos com Pagamento Cielo (Deeplink)
 
+[![CI](https://github.com/matheusbrum11/by-concerts-android/actions/workflows/ci.yml/badge.svg)](https://github.com/matheusbrum11/by-concerts-android/actions/workflows/ci.yml)
+
 App Android nativo de venda de ingressos para eventos locais, com pagamento
 presencial via **Cielo Smart / Cielo LIO** integrado por **Deeplink**. Desafio
 técnico com foco em: tratamento explícito de erros, **prevenção de cobrança
@@ -13,6 +15,7 @@ organização/manutenibilidade e documentação do uso de IA na construção.
 
 ## Sumário
 
+- [Screenshots](#screenshots)
 - [Stack](#stack)
 - [Arquitetura](#arquitetura)
 - [Estrutura multi-módulo](#estrutura-multi-módulo)
@@ -358,6 +361,21 @@ acionáveis via `MnsAlert`).
 ./gradlew test
 ```
 
+### Integração contínua
+
+`.github/workflows/ci.yml` roda `assembleDebug` + `test` em todo **pull request
+para `main`** (e em push na `main`), publicando os relatórios de teste como
+artefato do run.
+
+Dois detalhes que tornam esta esteira barata e estável:
+
+- **Nenhum teste instrumentado.** A suíte inteira roda na JVM — inclusive o
+  Compose UI test, via Robolectric. Sem emulador em CI, sem flakiness de device.
+- **Build reprodutível sem segredos.** O CI não tem `local.properties`; a leitura
+  das credenciais Cielo cai no fallback vazio e o build passa. Isso só é possível
+  porque o design system é resolvido do Maven Central — enquanto era composite
+  build, apontando para um caminho absoluto, CI seria impossível (ver ADR-006).
+
 - **Use case de compra:** caminho feliz, negado, cancelado, erro transitório
   (`ReconcilePaymentUseCaseTest`, `CreatePendingPurchaseUseCaseTest`).
 - **Idempotência:** duplo clique não gera duas compras (`CheckoutViewModelTest`);
@@ -448,5 +466,33 @@ explícitas do desenvolvedor. O registro honesto e rastreável está em
 
 ## Screenshots
 
-_(placeholder — adicionar capturas da listagem, detalhe/seleção, checkout e
-comprovante com QR.)_
+Capturas do fluxo real, em AVD **Android 10 (API 29)** com o **emulador oficial
+da Cielo v1.61.8** instalado — não são mockups nem callbacks simulados.
+
+### 1. Abertura e catálogo
+
+| Splash | Eventos |
+|:--:|:--:|
+| <img src="docs/screenshots/01-splash.png" width="260"> | <img src="docs/screenshots/02-eventos.png" width="260"> |
+| Gate de carregamento: roda o seed do Room e só libera a navegação quando o catálogo está pronto | Header com cor primária do design system; disponibilidade e esgotado como `MnsTag` |
+
+### 2. Seleção e checkout
+
+| Detalhe | Pagamento |
+|:--:|:--:|
+| <img src="docs/screenshots/03-detalhe.png" width="260"> | <img src="docs/screenshots/04-checkout.png" width="260"> |
+| Capa, descrição e `MnsStepper` limitado ao estoque disponível | Resumo do pedido e meios vindos do enum oficial `PaymentCode` |
+
+### 3. Handoff para a Cielo (deeplink)
+
+| App da Cielo | Cenários simuláveis |
+|:--:|:--:|
+| <img src="docs/screenshots/05-cielo-checkout.png" width="260"> | <img src="docs/screenshots/06-cielo-cenarios.png" width="260"> |
+| O app da Cielo recebe `lio://payment` e decodifica o payload: **R$ 240,00 · Crédito · Vista** — exatamente o que foi enviado (`24000` centavos, `CREDITO_AVISTA`, `installments: 0`) | O emulador permite escolher Sucesso / Cancelado / Erro |
+
+### 4. Desfechos
+
+| Comprovante (aprovado) | Cancelado |
+|:--:|:--:|
+| <img src="docs/screenshots/07-comprovante.png" width="260"> | <img src="docs/screenshots/08-cancelado.png" width="260"> |
+| NSU, autorização, bandeira e máscara **gerados pela Cielo**; QR do ingresso com o id da compra | Erro tratado como estado explícito do MVI, com o botão liberado para retentativa |
