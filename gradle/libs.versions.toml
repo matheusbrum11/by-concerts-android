@@ -1,45 +1,26 @@
-# ─────────────────────────────────────────────────────────────────────────────
-#  by-concerts-android — Version Catalog
-#  Fonte única de versões. Toolchain (AGP/Kotlin/Compose BOM/SDK) DEVE permanecer
-#  alinhado ao mns-design-system, que é consumido via composite build — versões
-#  divergentes de AGP/Kotlin quebram a substituição da dependência.
-# ─────────────────────────────────────────────────────────────────────────────
 [versions]
-# Toolchain (espelha o mns-design-system)
 agp = "8.9.1"
 kotlin = "2.1.10"
 ksp = "2.1.10-1.0.29"
 
-# SDK — compileSdk 36 é exigido pelo Compose 1.9.x (transitivo do Navigation 3) e
-# é suportado pelo AGP 8.9.1 (o mesmo do design system, mantendo o composite build).
-# targetSdk 34 conforme o case; minSdk 24 conforme o case e o DS.
 compileSdk = "36"
 minSdk = "24"
 targetSdk = "34"
 
-# AndroidX
 coreKtx = "1.15.0"
-# Compose 1.9.5 (BOM 2025.11.01) e lifecycle 2.10.0 são o mínimo exigido pela
-# cadeia transitiva do Navigation 3 (1.1.6) e ainda são compatíveis com AGP 8.9.1
-# (compileSdk 36) — o mesmo AGP do design system, preservando o composite build.
-# O DS compila com o próprio catálogo (Compose 1.7) e roda forward-compatible.
 lifecycle = "2.10.0"
 activityCompose = "1.9.3"
 composeBom = "2025.11.01"
 navigation3 = "1.1.6"
 
-# Kotlin ecosystem
 kotlinxSerialization = "1.7.3"
 kotlinxCoroutines = "1.9.0"
 
-# DI / persistência
 koin = "4.0.0"
 room = "2.6.1"
 
-# Design System (consumido via composite build → includeBuild no settings)
-mnsDesignSystem = "0.1.0-SNAPSHOT"
+mnsDesignSystem = "0.1.0"
 
-# Testes
 junit = "4.13.2"
 androidxTestExtJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
@@ -51,23 +32,17 @@ turbine = "1.2.0"
 mockk = "1.13.13"
 
 [libraries]
-# ── Design System (composite build substitui pela build local) ───────────────
-mns-design-system = { module = "io.github.matheusbrum:mns-design-system", version.ref = "mnsDesignSystem" }
+mns-design-system = { module = "io.github.matheusbrum11:mns-design-system", version.ref = "mnsDesignSystem" }
 
-# ── AndroidX base ────────────────────────────────────────────────────────────
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 
-# ── Navigation 3 (type-safe: back stack de chaves tipadas) ────────────────────
-# Sem lifecycle-viewmodel-navigation3: esse artefato só existe a partir de 2.11.0,
-# que exige AGP 9.1. O scoping de ViewModel por destino é feito via koinViewModel(key).
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 
-# ── Compose (via BOM) ────────────────────────────────────────────────────────
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
@@ -75,28 +50,21 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
-# O design system usa Icons.Filled.* (MnsTopBar etc). A partir do Compose 1.9 o
-# material3 não puxa mais material-icons transitivamente, então declaramos
-# explicitamente nos consumidores do DS (versão vem do BOM: 1.7.8, congelada).
 compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 
-# ── Kotlin ───────────────────────────────────────────────────────────────────
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 
-# ── DI (Koin) ────────────────────────────────────────────────────────────────
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-android = { module = "io.insert-koin:koin-android" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
 
-# ── Persistência (Room) ──────────────────────────────────────────────────────
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
-# ── Testes ───────────────────────────────────────────────────────────────────
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }

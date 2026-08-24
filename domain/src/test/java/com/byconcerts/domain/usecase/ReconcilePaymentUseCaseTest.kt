@@ -71,7 +71,6 @@ class ReconcilePaymentUseCaseTest {
 
     @Test
     fun `callback duplicado em compra ja terminal e no-op idempotente`() = runTest {
-        // Compra já APPROVED: um segundo callback não deve reprocessar nada.
         coEvery { purchaseRepo.findByIdempotencyKey("key-1") } returns
             purchase(status = PurchaseStatus.APPROVED, payment = paymentInfo())
 

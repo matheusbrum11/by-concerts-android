@@ -17,7 +17,7 @@ organização/manutenibilidade e documentação do uso de IA na construção.
 - [Arquitetura](#arquitetura)
 - [Estrutura multi-módulo](#estrutura-multi-módulo)
 - [Como executar](#como-executar)
-- [Design System via composite build](#design-system-via-composite-build)
+- [Design System (Maven Central)](#design-system-artefato-publicado-no-maven-central)
 - [Integração Cielo (Deeplink)](#integração-cielo-deeplink)
 - [Idempotência / prevenção de cobrança duplicada](#idempotência--prevenção-de-cobrança-duplicada)
 - [Tratamento de erros](#tratamento-de-erros)
@@ -41,8 +41,8 @@ organização/manutenibilidade e documentação do uso de IA na construção.
 - **Multi-módulo** Gradle
 - **JUnit + MockK + Turbine + Compose UI test (Robolectric)**
 - `compileSdk 36`, `targetSdk 34`, `minSdk 24`, JVM 17
-- AGP 8.9.1 / Kotlin 2.1.10 (mesmo AGP do design system → composite build preservado);
-  Compose 1.9.5 (BOM 2025.11.01) e lifecycle 2.10.0, o mínimo exigido pelo Navigation 3.
+- AGP 8.9.1 / Kotlin 2.1.10; Compose 1.9.5 (BOM 2025.11.01) e lifecycle 2.10.0 — o
+  mínimo exigido pela cadeia transitiva do Navigation 3.
 
 ### Por que targetSdk 34 (e não 29)?
 
@@ -66,7 +66,7 @@ Intents do usuário, reducer como única via de mutação e Effects one-shot
 :app  ──▶ :feature:events ──▶ :domain ──▶ :core:common
   │       :feature:checkout ─▶ :payment ─▶ :domain
   ├──▶ :data ──▶ :domain
-  └──▶ (Design System via composite build)
+  └──▶ io.github.matheusbrum11:mns-design-system (Maven Central)
 
 :domain  → puro Kotlin (nenhuma dependência Android)
 :payment → adapter Cielo Deeplink, isolado atrás de PaymentGateway
@@ -117,8 +117,8 @@ de exibição para a splash não "piscar" quando o seed é instantâneo.
 
 **Scoping de ViewModel por destino:** o artefato `lifecycle-viewmodel-navigation3`
 (decorator de ViewModel do Nav3) só existe a partir de 2.11.0, que exige AGP 9.1 —
-incompatível com o AGP 8.9.1 do composite build. Para manter o AGP alinhado ao
-design system, o scoping é feito via `koinViewModel(key = ...)` em cada rota
+incompatível com o AGP 8.9.1 usado neste projeto. Para não forçar esse salto de
+toolchain, o scoping é feito via `koinViewModel(key = ...)` em cada rota
 parametrizada (detalhe/checkout/comprovante), garantindo uma instância por argumento.
 
 ---
@@ -127,8 +127,8 @@ parametrizada (detalhe/checkout/comprovante), garantindo uma instância por argu
 
 ### Pré-requisitos
 - Android Studio (Ladybug+) ou JDK 17
-- Android SDK (o projeto usa `compileSdk 35`)
-- O projeto do **design system** disponível localmente (ver seção própria)
+- Android SDK com `compileSdk 36`
+- Acesso à internet no primeiro build (o design system é baixado do Maven Central)
 
 ### 1. Configurar `local.properties`
 Copie `local.properties.example` para `local.properties` e ajuste:
@@ -178,44 +178,57 @@ encontrado"* e mantém o botão disponível para retentativa.
 
 ---
 
-## Design System via composite build
+## Design System (artefato publicado no Maven Central)
 
-O design system (`mns-design-system`) é um **build Gradle independente**, ainda
-não publicado no Maven. Ele é consumido **localmente via composite build**
-(`includeBuild`), não via `include(":modulo")`.
+O design system é consumido como **dependência Maven publicada** — nenhuma
+configuração local é necessária para compilar o projeto.
 
-`settings.gradle.kts`:
-```kotlin
-includeBuild("/Users/matheusbrum/StudioProjects/mns-design-system") {
-    dependencySubstitution {
-        substitute(module("io.github.matheusbrum:mns-design-system"))
-            .using(project(":design_system"))
-    }
-}
+### Coordenadas Maven
+| | |
+|---|---|
+| Coordenada | `io.github.matheusbrum11:mns-design-system:0.1.0` |
+| Repositório do artefato | Maven Central |
+| Código-fonte | https://github.com/matheusbrum11/mns-design-system |
+| Namespace do código | `com.mns.designsystem` |
+
+`gradle/libs.versions.toml`:
+```toml
+mnsDesignSystem = "0.1.0"
+mns-design-system = { module = "io.github.matheusbrum11:mns-design-system", version.ref = "mnsDesignSystem" }
 ```
 
-A dependência é declarada pela **coordenada Maven real** da lib (confirmada no
-`gradle.properties` dela): `io.github.matheusbrum:mns-design-system` — e **não**
-`com.mns.designsystem:core` (a coordenada do enunciado era um exemplo).
-
-> **Substituição explícita:** o Gradle deriva a coordenada de um projeto incluído
-> do seu **nome** (`:design_system`), não do `artifactId` de publicação
-> (`mns-design-system`). Por isso a substituição automática falha e usamos
-> `dependencySubstitution` explícita. É o mesmo `group:artifact` que o artefato
-> terá no Maven.
-
-**Futuro (Maven):** ao publicar a lib, basta **remover o bloco `includeBuild`**;
-a mesma dependência do catálogo passará a resolver o artefato remoto, sem tocar
-no código de consumo das features.
+Como a lib está no Maven Central, o `settings.gradle.kts` precisa apenas de
+`mavenCentral()` — sem `includeBuild`, sem `dependencySubstitution` e sem repositório
+de snapshots.
 
 Todo consumo visual passa pelo design system (`MnsTheme`, `MnsButton`,
 `MnsScaffold`, `MnsStepper`, `MnsTicketCard`, `MnsQrCode`, `MnsCurrencyFormatter`…),
 nunca Material cru. O **QR Code do ingresso** é gerado pelo componente
 `MnsTicketCard`/`MnsQrCode` do próprio DS (que usa ZXing internamente).
 
-### Coordenadas Maven finais (a preencher pós-publicação)
-- Repositório público do artefato: _(a registrar)_
-- Coordenadas Maven finais: `io.github.matheusbrum:mns-design-system:<versão>`
+### Histórico: consumo via composite build
+
+Antes da publicação, a lib era consumida da árvore local via **composite build**
+(`includeBuild` + `dependencySubstitution` explícita, porque o Gradle deriva a
+coordenada de um projeto incluído do **nome** dele — `:design_system` — e não do
+`artifactId` publicado). Declarar a dependência pela coordenada Maven desde o
+início fez a migração ser exatamente o que se prometeu: **remover o `includeBuild`
+e trocar a versão**, sem tocar em uma linha do código de consumo. Ver ADR-006.
+
+### Desenvolvimento simultâneo da lib (opcional)
+
+Para iterar no design system e no app ao mesmo tempo, basta reintroduzir o
+composite build no `settings.gradle.kts` — a coordenada do catálogo continua a
+mesma:
+
+```kotlin
+includeBuild("/caminho/para/mns-design-system") {
+    dependencySubstitution {
+        substitute(module("io.github.matheusbrum11:mns-design-system"))
+            .using(project(":design_system"))
+    }
+}
+```
 
 ---
 
@@ -417,8 +430,10 @@ Resumo:
 - Repositório remoto (nova implementação de `EventRepository`).
 - Cancelamento/estorno parcial completo no fluxo de UI.
 - Mais `paymentCode` (parcelado, PIX dedicado, voucher).
-- Publicação do design system no Maven e remoção do `includeBuild`.
 - Testes instrumentados de ponta a ponta com o emulador Cielo.
+- Subir a toolchain para AGP 9.1 / compileSdk 37 e trocar o
+  `koinViewModel(key = …)` pelo `lifecycle-viewmodel-navigation3` — agora viável,
+  já que o design system deixou de ser composite build (ver ADR-011).
 
 ---
 

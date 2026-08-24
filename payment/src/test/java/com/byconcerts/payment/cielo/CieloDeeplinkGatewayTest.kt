@@ -31,7 +31,6 @@ class CieloDeeplinkGatewayTest {
         every { buildCheckoutUri(any()) } returns "lio://payment?request=abc&urlCallback=order%3A%2F%2Fpayment"
     }
 
-    /** Launcher de teste: controla disponibilidade e sucesso do disparo. */
     private fun launcher(available: Boolean = true, launches: Boolean = true) =
         object : DeeplinkLauncher {
             override fun launch(uri: String) = launches
@@ -63,7 +62,7 @@ class CieloDeeplinkGatewayTest {
         val approved = PaymentResult.Approved(PaymentInfo("A", "N", "VISA", "**** 1", 10000))
 
         val deferred = async { gateway.pay(request) }
-        runCurrent() // pay() arma o barramento e fica aguardando
+        runCurrent()
         bus.publish(PaymentCallback(reference = "key-1", result = approved))
 
         assertThat(deferred.await()).isEqualTo(approved)

@@ -11,12 +11,10 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-/** ViewModels de nível de app (fora das features). */
 private val appModule: Module = module {
     viewModel { SplashViewModel(get(), get()) }
 }
 
-/** Agregador dos módulos Koin de cada camada. */
 val appModules: List<Module> = listOf(
     coreModule,
     dataModule,

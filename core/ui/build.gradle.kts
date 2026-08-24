@@ -18,8 +18,6 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
-// :core:ui — base de UI compartilhada entre features. Hoje: a base MVI
-// (State imutável, Intents, Effects one-shot). Sem dependência de features.
 dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)

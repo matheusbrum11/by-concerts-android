@@ -3,7 +3,6 @@ package com.byconcerts.data.seed
 import com.byconcerts.data.local.entity.EventEntity
 import kotlinx.serialization.Serializable
 
-/** Formato do seed em assets/events.json. Valores monetários em centavos. */
 @Serializable
 data class EventSeedDto(
     val id: String,

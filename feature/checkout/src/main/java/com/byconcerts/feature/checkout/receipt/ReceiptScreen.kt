@@ -80,7 +80,6 @@ private fun ApprovedReceipt(purchase: Purchase, onDone: () -> Unit) {
     ) {
         val payment = purchase.payment
         MnsTicketCard(
-            // O QR carrega o id da compra APROVADA (requisito firme do case).
             title = purchase.eventTitle,
             qrContent = purchase.id,
             subtitle = "Ingresso válido — apresente o QR na entrada",

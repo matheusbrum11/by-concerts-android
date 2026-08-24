@@ -45,12 +45,11 @@ class PurchaseRepositoryImplTest {
     @Test
     fun `chave de idempotencia duplicada nao cria segunda compra`() = runTest {
         val first = repository.createPendingIfAbsent(pending(id = "p1", key = "same-key"))
-        // Segunda tentativa com a MESMA chave (id diferente): deve devolver a existente.
         val second = repository.createPendingIfAbsent(pending(id = "p2", key = "same-key"))
 
         assertThat(first.id).isEqualTo("p1")
-        assertThat(second.id).isEqualTo("p1") // devolveu a existente, não a nova
-        assertThat(repository.getById("p2")).isNull() // a segunda não foi persistida
+        assertThat(second.id).isEqualTo("p1")
+        assertThat(repository.getById("p2")).isNull()
     }
 
     @Test

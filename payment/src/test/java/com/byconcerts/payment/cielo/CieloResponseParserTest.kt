@@ -10,17 +10,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/**
- * Mapeamento dos retornos da Cielo → PaymentResult, usando os payloads REAIS do
- * contrato oficial (sample DeveloperCielo):
- *
- *  - Sucesso: a Order vem na RAIZ, com `payments[]`, `pendingAmount`, `reference`.
- *  - Falha:   envelope `{ code, reason, order }`.
- *  - `paymentFields.statusCode` é STRING.
- *  - A presença do query param `responsecode` sinaliza sucesso.
- *
- * Roda sob Robolectric por causa de android.util.Base64 e android.net.Uri.
- */
 @RunWith(RobolectricTestRunner::class)
 class CieloResponseParserTest {
 
@@ -31,7 +20,6 @@ class CieloResponseParserTest {
     private fun encode(json: String): String =
         Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
 
-    /** Monta a URI de callback como a Cielo faz: order://payment?response=..&responsecode=.. */
     private fun callbackUri(json: String, responseCode: String? = null): Uri =
         Uri.Builder()
             .scheme("order").authority("payment")
@@ -39,7 +27,6 @@ class CieloResponseParserTest {
             .apply { responseCode?.let { appendQueryParameter("responsecode", it) } }
             .build()
 
-    /** Order de sucesso conforme PaymentCheckoutResponseSuccess do sample oficial. */
     private fun successOrder(
         pendingAmount: Long = 0,
         statusCode: String = "1",
@@ -91,7 +78,6 @@ class CieloResponseParserTest {
 
     @Test
     fun `statusCode chega como STRING e ainda assim e interpretado`() {
-        // Se o parser tratasse statusCode como Int, o parse falharia aqui.
         val callback = parser.parse(callbackUri(successOrder(statusCode = "1"), "0"))
         assertThat(callback.result).isInstanceOf(PaymentResult.Approved::class.java)
     }
@@ -153,20 +139,11 @@ class CieloResponseParserTest {
 
     @Test
     fun `base64 com quebras de linha ainda decodifica`() {
-        // O app da Cielo codifica com Base64.DEFAULT, que insere \n.
         val wrapped = Base64.encodeToString(successOrder().toByteArray(), Base64.DEFAULT)
         val callback = parser.parse(wrapped)
         assertThat(callback.result).isInstanceOf(PaymentResult.Approved::class.java)
     }
 
-    /**
-     * REGRESSÃO — URI real capturada do emulador oficial da Cielo (v1.61.8) no
-     * cenário "Cancelado". Dois detalhes que quebravam o parse:
-     *  1. o Base64 chega com `\n` embutido na própria URI;
-     *  2. vem `responsecode=0` MESMO no cancelamento — ou seja, esse parâmetro
-     *     não serve para distinguir sucesso de falha (o sample oficial usa e
-     *     erra). Antes do fix, isso virava InvalidResponse em vez de Canceled.
-     */
     @Test
     fun `cancelamento real do emulador Cielo (com newline e responsecode=0) vira Canceled`() {
         val realUri = Uri.parse(
@@ -181,7 +158,6 @@ class CieloResponseParserTest {
 
     @Test
     fun `sucesso com responsecode ausente ainda e lido como sucesso`() {
-        // A discriminação é estrutural, não depende do query param.
         val callback = parser.parse(callbackUri(successOrder(), responseCode = null))
         assertThat(callback.result).isInstanceOf(PaymentResult.Approved::class.java)
     }

@@ -4,21 +4,15 @@ import com.byconcerts.domain.model.Event
 import com.byconcerts.domain.model.PaymentCode
 import com.byconcerts.domain.model.Purchase
 
-/** Fase do checkout — reflete explicitamente cada estado do pagamento. */
 sealed interface CheckoutPhase {
-    /** Pronto para pagar. */
     data object Idle : CheckoutPhase
 
-    /** Pagamento em andamento: o botão fica desabilitado (guard de idempotência). */
     data object Processing : CheckoutPhase
 
-    /** Aprovado — segue para o comprovante. */
     data object Approved : CheckoutPhase
 
-    /** Desfecho negativo definitivo (negado/cancelado). */
     data class Failed(val message: String) : CheckoutPhase
 
-    /** Erro transitório ou pagamento parcial: pode retentar com a MESMA chave. */
     data class PendingRetry(val message: String) : CheckoutPhase
 }
 
@@ -33,7 +27,6 @@ data class CheckoutState(
 ) {
     val totalInCents: Long get() = event?.totalInCents(quantity) ?: 0L
 
-    /** O botão de pagar só é habilitado quando não há pagamento em curso. */
     val isPayEnabled: Boolean
         get() = event != null && phase != CheckoutPhase.Processing && phase != CheckoutPhase.Approved
 }

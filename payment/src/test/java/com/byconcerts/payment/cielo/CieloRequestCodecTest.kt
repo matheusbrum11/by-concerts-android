@@ -36,7 +36,6 @@ class CieloRequestCodecTest {
         ),
     )
 
-    /** Decodifica o `request` embutido na URI de volta para JSON. */
     private fun decodeRequestParam(uri: String) =
         json.parseToJsonElement(
             String(Base64.decode(Uri.parse(uri).getQueryParameter("request"), Base64.DEFAULT)),
@@ -57,11 +56,9 @@ class CieloRequestCodecTest {
 
         assertThat(payload["reference"]!!.jsonPrimitive.content).isEqualTo("key-123")
         assertThat(payload["accessToken"]!!.jsonPrimitive.content).isEqualTo("TOKEN")
-        // A doc usa "clientID" com D maiúsculo.
         assertThat(payload["clientID"]!!.jsonPrimitive.content).isEqualTo("CID")
         assertThat(payload["merchantCode"]!!.jsonPrimitive.content).isEqualTo("MERCH")
         assertThat(payload["paymentCode"]!!.jsonPrimitive.content).isEqualTo("CREDITO_AVISTA")
-        // value é NUMÉRICO em centavos (2 ingressos x R$120,00 = 24000).
         assertThat(payload["value"]!!.jsonPrimitive.content).isEqualTo("24000")
         assertThat(payload["installments"]!!.jsonPrimitive.content).isEqualTo("0")
 
@@ -74,18 +71,14 @@ class CieloRequestCodecTest {
 
     @Test
     fun `base64 e percent-encoded na query, sobrevivendo a +, barra e igual`() {
-        // Regressão: concatenar a URI faria o '+' do Base64 virar espaço no
-        // outro app, corrompendo o payload. Uri.Builder faz o escaping correto.
         val longRequest = request.copy(
             items = List(12) { PaymentItem("Item $it ~ áéî", it + 1, "sku-$it", 9999) },
         )
         val uri = codec.buildCheckoutUri(longRequest)
 
         val raw = uri.substringAfter("request=").substringBefore("&")
-        // Se houver '+' cru na query, o payload chegaria corrompido.
         assertThat(raw).doesNotContain("+")
 
-        // E o round-trip precisa devolver exatamente o mesmo JSON.
         val payload = decodeRequestParam(uri)
         assertThat(payload["value"]!!.jsonPrimitive.content).isEqualTo("24000")
         assertThat(payload["items"]!!.jsonArrayFirst()["name"]!!.jsonPrimitive.content)

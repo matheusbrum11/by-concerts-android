@@ -1,9 +1,5 @@
 package com.byconcerts.domain.model
 
-/**
- * Evento à venda. Valores monetários SEMPRE em centavos (Long) — mesma
- * representação canônica do Design System (MnsCurrencyFormatter) e da Cielo.
- */
 data class Event(
     val id: String,
     val title: String,
@@ -17,6 +13,5 @@ data class Event(
 ) {
     val isSoldOut: Boolean get() = availableQuantity <= 0
 
-    /** Total em centavos para uma dada quantidade. */
     fun totalInCents(quantity: Int): Long = unitPriceInCents * quantity
 }

@@ -91,7 +91,6 @@ class CheckoutViewModelTest {
         val viewModel = buildViewModel()
         advanceUntilIdle()
 
-        // Dois cliques antes de o pagamento processar: o guard bloqueia o segundo.
         viewModel.onIntent(CheckoutIntent.PayClicked)
         viewModel.onIntent(CheckoutIntent.PayClicked)
         advanceUntilIdle()
@@ -120,9 +119,6 @@ class CheckoutViewModelTest {
 
     @Test
     fun `apos desfecho terminal, nova tentativa cria compra com NOVA chave`() = runTest {
-        // Retry com a mesma chave só vale enquanto PENDING. Depois de um
-        // cancelamento (terminal), reusar a chave faria a conciliação virar
-        // no-op e prenderia o usuário no resultado antigo.
         val canceled = purchase(status = PurchaseStatus.CANCELED)
         every { observeEvent("evt-1") } returns flowOf(event)
         every { observePurchase(any()) } returns emptyFlow()
@@ -133,14 +129,13 @@ class CheckoutViewModelTest {
         val viewModel = buildViewModel()
         advanceUntilIdle()
 
-        viewModel.onIntent(CheckoutIntent.PayClicked)   // 1a tentativa -> CANCELED
+        viewModel.onIntent(CheckoutIntent.PayClicked)
         advanceUntilIdle()
         assertThat(viewModel.state.value.phase).isInstanceOf(CheckoutPhase.Failed::class.java)
 
-        viewModel.onIntent(CheckoutIntent.PayClicked)   // 2a tentativa
+        viewModel.onIntent(CheckoutIntent.PayClicked)
         advanceUntilIdle()
 
-        // Duas compras criadas: a tentativa terminal não é reaproveitada.
         coVerify(exactly = 2) { createPending(any(), any(), any()) }
     }
 
@@ -161,17 +156,12 @@ class CheckoutViewModelTest {
         viewModel.onIntent(CheckoutIntent.PayClicked)
         advanceUntilIdle()
 
-        // Uma única compra: a segunda tentativa reaproveita a chave PENDING.
         coVerify(exactly = 1) { createPending(any(), any(), any()) }
         coVerify(exactly = 2) { gateway.pay(match { it.reference == "key-1" }) }
     }
 
     @Test
     fun `desfecho persistido pelo callback aprova mesmo se o gateway der timeout`() = runTest {
-        // Cenário real: o processo do app foi morto enquanto o app da Cielo
-        // estava em primeiro plano. O gateway em memória não recebe nada
-        // (timeout), mas o PaymentCallbackHandler já conciliou e persistiu a
-        // compra — que o ViewModel observa do Room.
         val approved = purchase(status = PurchaseStatus.APPROVED, payment = paymentInfo())
         every { observeEvent("evt-1") } returns flowOf(event)
         every { observePurchase("pur-1") } returns flowOf(approved)
@@ -185,8 +175,6 @@ class CheckoutViewModelTest {
         viewModel.effects.test {
             viewModel.onIntent(CheckoutIntent.PayClicked)
             advanceUntilIdle()
-            // Navega ao comprovante UMA única vez, apesar de o desfecho chegar
-            // pela observação do Room e pelo retorno do gateway.
             assertThat(awaitItem()).isEqualTo(CheckoutEffect.OpenReceipt("pur-1"))
             expectNoEvents()
         }

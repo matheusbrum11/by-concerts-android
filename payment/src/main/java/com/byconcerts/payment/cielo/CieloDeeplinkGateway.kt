@@ -7,23 +7,6 @@ import com.byconcerts.domain.model.PaymentResult
 import com.byconcerts.payment.gateway.PaymentGateway
 import kotlinx.coroutines.withTimeoutOrNull
 
-/**
- * Implementação principal do [PaymentGateway]: integração Cielo via DEEPLINK,
- * conforme o sample oficial da Cielo.
- *
- * O app NÃO embarca o SDK da Cielo — apenas dispara uma Intent
- * (`lio://payment`) e aguarda o callback (`order://payment`), por isso não
- * herda a restrição de targetSdk 29 do modelo de SDK embarcado.
- *
- * Fluxo: verifica disponibilidade → arma o barramento → dispara a intent →
- * suspende até o callback (com timeout). Falha de disparo (app da Cielo
- * ausente) e timeout viram [PaymentError] explícitos.
- *
- * Importante: este `await` é só o caminho "app vivo". A persistência do
- * desfecho é feita por [PaymentCallbackHandler] no momento do callback, de modo
- * que um timeout aqui NÃO significa que o pagamento não ocorreu — a compra
- * segue PENDING e é conciliada pelo `reference` assim que o retorno chega.
- */
 class CieloDeeplinkGateway(
     private val codec: CieloRequestCodec,
     private val launcher: DeeplinkLauncher,
@@ -57,6 +40,6 @@ class CieloDeeplinkGateway(
     }
 
     private companion object {
-        const val DEFAULT_TIMEOUT_MILLIS = 5 * 60 * 1000L // 5 min
+        const val DEFAULT_TIMEOUT_MILLIS = 5 * 60 * 1000L
     }
 }

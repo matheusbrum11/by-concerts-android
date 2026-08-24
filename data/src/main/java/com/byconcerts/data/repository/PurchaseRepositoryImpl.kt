@@ -19,8 +19,6 @@ class PurchaseRepositoryImpl(
         withContext(dispatchers.io) {
             val rowId = purchaseDao.insertIgnoringConflict(purchase.toEntity())
             if (rowId == -1L) {
-                // Conflito de chave de idempotência: já havia uma compra. Devolve
-                // a existente em vez de criar outra (não-duplicação).
                 purchaseDao.findByIdempotencyKey(purchase.idempotencyKey)?.toDomain() ?: purchase
             } else {
                 purchase

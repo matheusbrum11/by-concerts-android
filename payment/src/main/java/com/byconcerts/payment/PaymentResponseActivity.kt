@@ -8,17 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
-/**
- * Recebe o callback do deeplink da Cielo (`order://payment`), declarada no
- * manifest com `<data android:scheme="order" android:host="payment"/>`.
- *
- * Não tem UI: delega ao [PaymentCallbackHandler] (parse → concilia/persiste →
- * publica) e finaliza, devolvendo o usuário à tela de checkout.
- *
- * A conciliação roda em um escopo de APLICAÇÃO, não no da Activity: o `finish()`
- * é imediato e o trabalho de persistir o desfecho não pode ser cancelado junto
- * — é justamente ele que garante que a compra não fique órfã em PENDING.
- */
 class PaymentResponseActivity : Activity() {
 
     private val callbackHandler: PaymentCallbackHandler by inject()

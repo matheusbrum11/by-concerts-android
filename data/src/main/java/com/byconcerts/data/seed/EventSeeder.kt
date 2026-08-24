@@ -6,11 +6,6 @@ import com.byconcerts.data.local.dao.EventDao
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
-/**
- * Popula o Room a partir de assets/events.json no primeiro boot (tabela vazia).
- * Mantém o projeto executável sem backend nem credenciais — atrito zero para o
- * avaliador rodar.
- */
 class EventSeeder(
     private val context: Context,
     private val eventDao: EventDao,

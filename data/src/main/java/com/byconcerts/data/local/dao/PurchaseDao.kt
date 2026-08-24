@@ -11,11 +11,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PurchaseDao {
 
-    /**
-     * Insere IGNORANDO conflitos. Se a chave de idempotência já existe, a linha
-     * antiga é preservada e o retorno é -1 — o repositório detecta isso e devolve
-     * a compra existente em vez de criar outra.
-     */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnoringConflict(purchase: PurchaseEntity): Long
 

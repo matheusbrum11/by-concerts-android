@@ -28,9 +28,6 @@ android {
     }
 }
 
-// :data — Room, mappers, implementações de EventRepository/PurchaseRepository e
-// o seed de eventos (assets/events.json). Depende apenas do :domain (interfaces)
-// e do :core:common. Trocar Room por API remota = nova implementação aqui.
 dependencies {
     implementation(project(":domain"))
     implementation(project(":core:common"))

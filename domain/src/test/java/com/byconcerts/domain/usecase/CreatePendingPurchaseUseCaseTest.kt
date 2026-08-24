@@ -21,7 +21,6 @@ class CreatePendingPurchaseUseCaseTest {
     private val eventRepo = mockk<EventRepository>()
     private val purchaseRepo = mockk<PurchaseRepository>()
 
-    // IdGenerator determinístico: 1ª chamada = id, 2ª = chave de idempotência.
     private val ids = ArrayDeque(listOf("pur-1", "key-1"))
     private val useCase = CreatePendingPurchaseUseCase(
         eventRepository = eventRepo,

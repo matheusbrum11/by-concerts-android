@@ -19,7 +19,6 @@ class EventDetailViewModel(
                     copy(
                         isLoading = false,
                         event = event,
-                        // Mantém a quantidade dentro do estoque disponível.
                         quantity = quantity.coerceIn(1, (event?.availableQuantity ?: 1).coerceAtLeast(1)),
                         errorMessage = if (event == null) "Evento não encontrado." else null,
                     )

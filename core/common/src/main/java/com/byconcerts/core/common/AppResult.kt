@@ -1,13 +1,5 @@
 package com.byconcerts.core.common
 
-/**
- * Wrapper de resultado com erro TIPADO. Preferimos isto a exceptions soltas para
- * tornar o tratamento de erro explícito e verificável em tempo de compilação:
- * quem chama é obrigado a decidir o que fazer com [Failure].
- *
- * @param D tipo do dado em caso de sucesso.
- * @param E tipo do erro de domínio em caso de falha (um sealed, nunca Throwable cru).
- */
 sealed interface AppResult<out D, out E> {
     data class Success<out D>(val data: D) : AppResult<D, Nothing>
     data class Failure<out E>(val error: E) : AppResult<Nothing, E>

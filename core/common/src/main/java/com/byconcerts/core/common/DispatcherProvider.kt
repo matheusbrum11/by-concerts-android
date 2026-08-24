@@ -3,11 +3,6 @@ package com.byconcerts.core.common
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
-/**
- * Abstração dos dispatchers de coroutines. Injetada (via Koin) para que os testes
- * possam trocar por dispatchers determinísticos (StandardTestDispatcher) sem
- * depender de Dispatchers.Main real.
- */
 interface DispatcherProvider {
     val main: CoroutineDispatcher
     val io: CoroutineDispatcher

@@ -13,12 +13,6 @@ import com.byconcerts.payment.gateway.PaymentGateway
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
-/**
- * Grafo Koin do módulo de pagamento. As credenciais vêm de BuildConfig (lidas
- * do local.properties). O barramento de callback é singleton para ser
- * compartilhado entre o gateway (que aguarda) e a PaymentResponseActivity
- * (que publica).
- */
 val paymentModule = module {
     single {
         CieloCredentials(

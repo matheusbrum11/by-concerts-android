@@ -23,7 +23,6 @@ fun PurchaseEntity.toDomain(): Purchase = Purchase(
 )
 
 private fun PurchaseEntity.toPaymentInfoOrNull(): PaymentInfo? {
-    // Só reconstrói o PaymentInfo quando os campos essenciais existem (APPROVED).
     if (authCode == null || cieloCode == null || brand == null ||
         maskedCard == null || amountInCents == null
     ) {

@@ -19,22 +19,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * Orquestra o checkout: cria a compra PENDING, dispara o gateway e reflete o
- * desfecho.
- *
- * Prevenção de cobrança duplicada em DUAS camadas:
- *  1) Guard de estado (aqui): enquanto [CheckoutPhase.Processing], novos
- *     PayClicked são ignorados — o botão não redispara a intent.
- *  2) Persistência: a chave de idempotência é UNIQUE no Room e
- *     [ReconcilePaymentUseCase] trata callback repetido como no-op.
- *
- * Resiliência a morte de processo: a compra é OBSERVADA do Room. Quem persiste
- * o desfecho é o callback do deeplink (PaymentCallbackHandler), então mesmo que
- * este ViewModel tenha sido destruído enquanto o app da Cielo estava em
- * primeiro plano, ao voltar a tela lê o estado real do banco. O retorno do
- * `gateway.pay()` é apenas o atalho do caminho feliz.
- */
 class CheckoutViewModel(
     private val eventId: String,
     private val quantity: Int,
@@ -68,18 +52,12 @@ class CheckoutViewModel(
 
     private fun pay() {
         val state = currentState
-        // Guard de idempotência a nível de estado: nada de redisparo.
         if (state.phase == CheckoutPhase.Processing || state.phase == CheckoutPhase.Approved) return
         if (state.event == null) return
 
         setState { copy(phase = CheckoutPhase.Processing, errorMessage = null) }
 
         viewModelScope.launch {
-            // Retry SEMPRE com a mesma chave enquanto a tentativa segue PENDING
-            // (pode haver cobrança em aberto do outro lado). Após um desfecho
-            // TERMINAL (negado/cancelado), a tentativa acabou: uma nova compra
-            // exige uma nova chave, senão a conciliação seria no-op e o usuário
-            // ficaria preso no resultado antigo.
             val retryable = state.purchase?.takeIf { it.isPending }
             val purchase = retryable ?: when (
                 val result = createPendingPurchase(eventId, quantity, state.paymentCode)
@@ -95,8 +73,6 @@ class CheckoutViewModel(
 
             val paymentResult = paymentGateway.pay(buildPaymentRequest(purchase))
 
-            // O callback já pode ter conciliado e persistido; como o use case é
-            // idempotente, esta chamada vira no-op nesse caso.
             when (val reconciled = reconcilePayment(purchase.idempotencyKey, paymentResult)) {
                 is AppResult.Success -> onAttemptFinished(reconciled.data)
                 is AppResult.Failure -> failWith(reconciled.error.toMessage())
@@ -104,12 +80,6 @@ class CheckoutViewModel(
         }
     }
 
-    /**
-     * Fim de uma tentativa de pagamento. Diferente da observação do banco, aqui
-     * NUNCA podemos continuar em [CheckoutPhase.Processing]: se o desfecho não
-     * foi terminal, a tentativa acabou sem conclusão e o usuário precisa poder
-     * retentar — deixar o botão travado prenderia a tela para sempre.
-     */
     private fun onAttemptFinished(purchase: Purchase) {
         applyOutcome(purchase)
         if (purchase.isPending) {
@@ -119,7 +89,6 @@ class CheckoutViewModel(
         }
     }
 
-    /** Passa a refletir o estado persistido da compra (fonte de verdade). */
     private fun observePurchase(purchaseId: String) {
         purchaseObserver?.cancel()
         purchaseObserver = observePurchase.invoke(purchaseId)
@@ -135,8 +104,6 @@ class CheckoutViewModel(
         when (purchase.status) {
             PurchaseStatus.APPROVED -> {
                 setState { copy(phase = CheckoutPhase.Approved) }
-                // Navega uma única vez, ainda que o desfecho chegue pelos dois
-                // caminhos (retorno do gateway + observação do Room).
                 if (!alreadyApproved) sendEffect(CheckoutEffect.OpenReceipt(purchase.id))
             }
 
@@ -148,9 +115,6 @@ class CheckoutViewModel(
                 copy(phase = CheckoutPhase.Failed(purchase.failureReason ?: "Pagamento cancelado."))
             }
 
-            // Ainda PENDING vindo da OBSERVAÇÃO do banco: pode ser simplesmente
-            // a compra recém-criada, com o pagamento em andamento. Não mexemos
-            // na fase aqui — quem encerra a tentativa é [onAttemptFinished].
             PurchaseStatus.PENDING -> Unit
         }
     }

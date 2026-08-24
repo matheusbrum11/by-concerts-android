@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // Necessário para @Serializable nas chaves de rota type-safe do Navigation 3.
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -35,8 +34,6 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
-// :app — ponto de entrada, Navigation Compose e o grafo Koin que amarra os
-// módulos. Agrega todas as camadas apenas para wiring de DI e navegação.
 dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
@@ -54,7 +51,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.serialization.json)
 
-    // Navigation 3 — type-safe por construção (chaves tipadas no back stack).
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
 

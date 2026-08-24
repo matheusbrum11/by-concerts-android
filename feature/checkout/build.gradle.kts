@@ -29,16 +29,12 @@ android {
     }
 }
 
-/** Ver :feature:events — unit tests de release desligados (deps debug-only). */
 androidComponents {
     beforeVariants(selector().withBuildType("release")) { variant ->
         variant.enableUnitTest = false
     }
 }
 
-// :feature:checkout — fluxo de pagamento + comprovante (com QR via MnsQrCode do
-// Design System). MVI + Compose. Depende do :payment para orquestrar o gateway
-// (gateway.pay() → PaymentResult → use case de conciliação/idempotência).
 dependencies {
     implementation(project(":domain"))
     implementation(project(":core:common"))

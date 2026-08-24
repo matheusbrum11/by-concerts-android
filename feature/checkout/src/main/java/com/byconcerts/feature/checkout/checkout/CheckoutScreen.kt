@@ -40,7 +40,7 @@ fun CheckoutRoute(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is CheckoutEffect.OpenReceipt -> onOpenReceipt(effect.purchaseId)
-                is CheckoutEffect.ShowMessage -> Unit // já refletido no State (MnsAlert)
+                is CheckoutEffect.ShowMessage -> Unit
             }
         }
     }
@@ -109,7 +109,6 @@ private fun SummaryRow(label: String, value: String) {
     }
 }
 
-/** Rótulo amigável para os meios oferecidos no checkout. */
 private fun PaymentCode.label(): String = when (this) {
     PaymentCode.CREDITO_AVISTA -> "Crédito"
     PaymentCode.DEBITO_AVISTA -> "Débito"

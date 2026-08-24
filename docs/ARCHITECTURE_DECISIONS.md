@@ -64,16 +64,31 @@ clássico). Rejeitada por divergir do texto do enunciado.
 
 ---
 
-## ADR-006 — Design System via composite build com substituição explícita
+## ADR-006 — Design System declarado por coordenada Maven (composite build → artefato publicado)
 
-**Contexto:** o DS é um build Gradle independente, ainda não publicado no Maven.
-**Decisão:** `includeBuild` no `settings.gradle.kts`, declarando a dependência
-pela coordenada Maven real (`io.github.matheusbrum:mns-design-system`), com
-`dependencySubstitution` explícita para o projeto `:design_system`.
-**Consequências:** a substituição automática não funciona porque o Gradle deriva
-a coordenada do **nome** do projeto incluído (`:design_system`), não do
-`artifactId` publicado. A substituição explícita resolve isso. Ao publicar no
-Maven, remove-se o `includeBuild` e a mesma linha do catálogo resolve o remoto.
+**Contexto:** no início o DS não estava publicado; era um build Gradle
+independente, fora da árvore deste projeto.
+
+**Decisão:** declarar a dependência **sempre pela coordenada Maven**, nunca por
+`project(":…")`, e usar `includeBuild` + `dependencySubstitution` apenas como
+mecanismo temporário de resolução local. A substituição precisou ser explícita
+porque o Gradle deriva a coordenada de um projeto incluído do **nome** dele
+(`:design_system`), não do `artifactId` publicado.
+
+**Estado atual:** o DS foi publicado no Maven Central como
+`io.github.matheusbrum11:mns-design-system:0.1.0`. O `includeBuild` e o
+repositório de snapshots foram removidos; `mavenCentral()` basta.
+
+**Consequências:** a migração custou exatamente o que a decisão prometia —
+remover o bloco `includeBuild` e trocar a versão no catálogo, **sem alterar uma
+linha do código de consumo**. Efeito colateral positivo: o projeto deixou de
+depender de um caminho absoluto na máquina do desenvolvedor
+(`/Users/matheusbrum/StudioProjects/mns-design-system`), então clona e compila em
+qualquer máquina — inclusive na do avaliador.
+
+**Nota:** o `group` mudou de `io.github.matheusbrum` para
+`io.github.matheusbrum11` na publicação (namespace verificado no Central); o
+catálogo e o filtro de repositório foram ajustados junto.
 
 ---
 
@@ -222,18 +237,24 @@ ViewModel por destino usa `koinViewModel(key=...)` porque o decorator oficial
 
 ---
 
-## ADR-011 — Bump mínimo de toolchain para o Navigation 3 (preservando o composite build)
+## ADR-011 — Bump mínimo de toolchain para o Navigation 3
 
 **Contexto:** o Navigation 3 estável (1.1.6) exige, na cadeia transitiva, Compose
 ≥ 1.9.5 e lifecycle ≥ 2.10 (compileSdk 36). As versões mais novas (lifecycle 2.11
-/ Compose 1.10) exigem **AGP 9.1 / compileSdk 37**, o que quebraria o composite
-build do design system (fixado em AGP 8.9.1).
+/ Compose 1.10) exigem **AGP 9.1 / compileSdk 37**. À época, isso quebraria o
+composite build do design system, que fixava AGP 8.9.1.
 **Decisão:** adotar o conjunto **mínimo** compatível com AGP 8.9.1: `compileSdk 36`,
 Compose **1.9.5** (BOM 2025.11.01), lifecycle **2.10.0**; **não** usar
 `lifecycle-viewmodel-navigation3` (que puxaria AGP 9.1).
 **Consequências:**
-- O design system continua compilando com o próprio catálogo (Compose 1.7) via
-  composite build e roda **forward-compatible** sobre o Compose 1.9.5 do app.
+- O design system foi compilado com o próprio catálogo (Compose 1.7) e roda
+  **forward-compatible** sobre o Compose 1.9.5 do app.
+- **Revisão pendente (ADR-006):** com o DS agora consumido como AAR publicado, o
+  AGP deste projeto não precisa mais casar com o da lib — a restrição que
+  motivou o "mínimo" deixou de existir. Subir para AGP 9.1 / compileSdk 37 e
+  adotar `lifecycle-viewmodel-navigation3` (o decorator oficial de ViewModel do
+  Nav3, no lugar do `koinViewModel(key=…)`) passou a ser viável. Não foi feito
+  aqui por ser um salto de toolchain sem ganho funcional para o case.
 - A partir do Compose 1.9 o `material3` não puxa mais `material-icons`
   transitivamente. Como o design system usa `Icons.Filled.*` (ex.: MnsTopBar),
   foi necessário declarar `androidx.compose.material:material-icons-core`

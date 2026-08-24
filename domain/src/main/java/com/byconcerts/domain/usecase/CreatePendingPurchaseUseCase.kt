@@ -11,15 +11,6 @@ import com.byconcerts.domain.model.PurchaseStatus
 import com.byconcerts.domain.repository.EventRepository
 import com.byconcerts.domain.repository.PurchaseRepository
 
-/**
- * Cria a compra PENDING ANTES de iniciar o pagamento e gera a chave de
- * idempotência. Valida disponibilidade e quantidade. É a etapa que garante que
- * exista um registro local rastreável antes de qualquer intent de pagamento.
- *
- * Proteção contra duplo clique: o guard "não criar de novo enquanto PENDING"
- * fica no ViewModel/reducer (MVI). Aqui garantimos consistência de dados e a
- * chave única; a constraint UNIQUE no banco é a rede de segurança final.
- */
 class CreatePendingPurchaseUseCase(
     private val eventRepository: EventRepository,
     private val purchaseRepository: PurchaseRepository,

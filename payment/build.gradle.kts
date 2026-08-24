@@ -7,16 +7,12 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Leitura MANUAL do local.properties (não usamos gradleLocalProperties, cuja
-// assinatura mudou entre versões do AGP e quebra o sync). As credenciais Cielo
-// ficam fora do versionamento e chegam ao código via BuildConfig.
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) FileInputStream(f).use { load(it) }
 }
 val cieloClientId: String = localProps.getProperty("CIELO_CLIENT_ID") ?: ""
 val cieloAccessToken: String = localProps.getProperty("CIELO_ACCESS_TOKEN") ?: ""
-// Opcional: só é usado em cenários multi-estabelecimento.
 val cieloMerchantCode: String = localProps.getProperty("CIELO_MERCHANT_CODE") ?: ""
 
 android {
@@ -48,9 +44,6 @@ android {
     }
 }
 
-// :payment — abstração PaymentGateway + integração Cielo via Deeplink, isolada
-// do resto do app. Depende do :domain só para trocar os MODELOS de domínio
-// (PaymentRequest/PaymentResult). Nenhuma feature conhece detalhes da Cielo.
 dependencies {
     implementation(project(":domain"))
     implementation(project(":core:common"))

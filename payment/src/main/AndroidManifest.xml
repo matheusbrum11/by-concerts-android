@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-      Visibilidade de pacotes (Android 11+ / targetSdk 30+): sem esta declaração
-      o `resolveActivity` não enxerga o app de pagamento da Cielo, mesmo que ele
-      esteja instalado, e a detecção de "Cielo não instalada" daria falso negativo.
-    -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -14,15 +9,7 @@
     </queries>
 
     <application>
-        <!--
-          Contrato de resposta do deeplink: order://payment
-          (mesmo host usado pelo sample oficial da Cielo). Mantemos também
-          order://response, contrato citado no material de integração, para que
-          ambos os retornos sejam aceitos.
 
-          singleTask: o retorno cai na task do nosso app; ao finalizar, o usuário
-          volta para a tela de checkout que estava embaixo na pilha.
-        -->
         <activity
             android:name=".PaymentResponseActivity"
             android:exported="true"

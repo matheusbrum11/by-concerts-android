@@ -10,8 +10,6 @@ import com.byconcerts.domain.usecase.ReconcilePaymentUseCase
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
-/** Grafo dos use cases. Declarados uma única vez aqui; as features só declaram
- * seus ViewModels (evita definições duplicadas no grafo Koin). */
 val domainModule = module {
     factoryOf(::ObserveEventsUseCase)
     factoryOf(::ObserveEventUseCase)

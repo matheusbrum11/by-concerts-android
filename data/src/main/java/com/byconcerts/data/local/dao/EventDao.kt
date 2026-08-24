@@ -25,10 +25,6 @@ interface EventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(events: List<EventEntity>)
 
-    /**
-     * Baixa condicional: só decrementa se houver estoque suficiente. Retorna o
-     * número de linhas afetadas (0 = não havia estoque / evento inexistente).
-     */
     @Query(
         "UPDATE events SET availableQuantity = availableQuantity - :quantity " +
             "WHERE id = :id AND availableQuantity >= :quantity",

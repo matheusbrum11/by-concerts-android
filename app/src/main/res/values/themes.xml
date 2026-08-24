@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema do sistema apenas para a janela do Activity; a UI real é toda
-         Compose sob o MnsTheme do Design System. -->
     <style name="Theme.ByConcerts" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
