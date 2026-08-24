@@ -1,8 +1,6 @@
 package com.byconcerts.domain.usecase
 
 import com.byconcerts.core.common.AppResult
-import com.byconcerts.core.common.Clock
-import com.byconcerts.core.common.IdGenerator
 import com.byconcerts.domain.error.DomainError
 import com.byconcerts.domain.event
 import com.byconcerts.domain.model.PaymentCode
@@ -25,13 +23,16 @@ class CreatePendingPurchaseUseCaseTest {
     private val useCase = CreatePendingPurchaseUseCase(
         eventRepository = eventRepo,
         purchaseRepository = purchaseRepo,
-        clock = Clock { 1234L },
-        idGenerator = IdGenerator { ids.removeFirst() },
+        clock = { 1234L },
+        idGenerator = { ids.removeFirst() },
     )
 
     @Test
     fun `cria compra PENDING com chave de idempotencia e total correto`() = runTest {
-        coEvery { eventRepo.getEvent("evt-1") } returns event(unitPriceInCents = 5000, availableQuantity = 10)
+        coEvery { eventRepo.getEvent("evt-1") } returns event(
+            unitPriceInCents = 5000,
+            availableQuantity = 10
+        )
         val captured = slot<com.byconcerts.domain.model.Purchase>()
         coEvery { purchaseRepo.createPendingIfAbsent(capture(captured)) } answers { captured.captured }
 

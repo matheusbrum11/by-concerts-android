@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class SplashViewModel(
     private val eventSeeder: EventSeeder,
@@ -25,7 +26,7 @@ class SplashViewModel(
             eventSeeder.seedIfEmpty()
             observeEvents().first()
             val elapsed = System.currentTimeMillis() - startedAt
-            if (elapsed < MIN_VISIBLE_MILLIS) delay(MIN_VISIBLE_MILLIS - elapsed)
+            if (elapsed < MIN_VISIBLE_MILLIS) delay((MIN_VISIBLE_MILLIS - elapsed).milliseconds)
             _ready.value = true
         }
     }

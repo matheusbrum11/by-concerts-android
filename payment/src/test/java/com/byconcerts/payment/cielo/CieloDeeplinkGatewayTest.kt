@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CieloDeeplinkGatewayTest {
@@ -78,7 +79,7 @@ class CieloDeeplinkGatewayTest {
         )
 
         val deferred = async { gateway.pay(request) }
-        advanceTimeBy(1_001)
+        advanceTimeBy(1_001.milliseconds)
         runCurrent()
 
         assertThat((deferred.await() as PaymentResult.Error).type).isEqualTo(PaymentError.Timeout)

@@ -18,7 +18,5 @@ data class Purchase(
     val failureReason: String? = null,
 ) {
     val isPending: Boolean get() = status == PurchaseStatus.PENDING
-    val isApproved: Boolean get() = status == PurchaseStatus.APPROVED
-
     val isTerminal: Boolean get() = status != PurchaseStatus.PENDING
 }

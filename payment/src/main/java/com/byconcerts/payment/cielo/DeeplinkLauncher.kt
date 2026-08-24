@@ -3,7 +3,7 @@ package com.byconcerts.payment.cielo
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 
 interface DeeplinkLauncher {
     fun launch(uri: String): Boolean
@@ -24,7 +24,7 @@ class AndroidDeeplinkLauncher(private val context: Context) : DeeplinkLauncher {
         intentFor("${CieloRequestCodec.SCHEME}://${CieloRequestCodec.AUTHORITY_PAYMENT}")
             .resolveActivity(context.packageManager) != null
 
-    private fun intentFor(uri: String) = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+    private fun intentFor(uri: String) = Intent(Intent.ACTION_VIEW, uri.toUri()).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }

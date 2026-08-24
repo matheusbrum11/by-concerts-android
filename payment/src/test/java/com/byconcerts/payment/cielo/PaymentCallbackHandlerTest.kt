@@ -9,6 +9,7 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Test
@@ -58,6 +59,7 @@ class PaymentCallbackHandlerTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `publica no barramento para retomar quem estiver aguardando`() = runTest {
         coEvery { reconcile(any(), any()) } returns AppResult.Failure(mockk(relaxed = true))
@@ -81,7 +83,7 @@ class PaymentCallbackHandlerTest {
     }
 
     @Test
-    fun `callback duplicado chama a conciliacao de novo — e ela e idempotente`() = runTest {
+    fun `callback duplicado chama a conciliacao de novo - e ela e idempotente`() = runTest {
         coEvery { reconcile(any(), any()) } returns AppResult.Failure(mockk(relaxed = true))
 
         handler.handle(callbackUri(approvedOrder, "0"))

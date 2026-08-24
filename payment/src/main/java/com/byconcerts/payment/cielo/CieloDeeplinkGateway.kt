@@ -6,6 +6,7 @@ import com.byconcerts.domain.model.PaymentRequest
 import com.byconcerts.domain.model.PaymentResult
 import com.byconcerts.payment.gateway.PaymentGateway
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 class CieloDeeplinkGateway(
     private val codec: CieloRequestCodec,
@@ -31,7 +32,7 @@ class CieloDeeplinkGateway(
             return PaymentResult.Error(PaymentError.GatewayNotAvailable)
         }
 
-        val callback = withTimeoutOrNull(timeoutMillis) { deferred.await() }
+        val callback = withTimeoutOrNull(timeoutMillis.milliseconds) { deferred.await() }
         if (callback == null) {
             callbackBus.cancel()
             return PaymentResult.Error(PaymentError.Timeout)

@@ -23,7 +23,7 @@ class CieloResponseParser(private val json: Json) {
 
         val errorEnvelope = decodeErrorOrNull(decoded)
         if (errorEnvelope?.code != null || !errorEnvelope?.reason.isNullOrBlank()) {
-            return toFailure(errorEnvelope!!)
+            return toFailure(errorEnvelope)
         }
 
         val order = decodeOrderOrNull(decoded) ?: return invalid()
@@ -101,8 +101,6 @@ class CieloResponseParser(private val json: Json) {
 
     companion object {
         const val PARAM_RESPONSE = "response"
-        const val PARAM_RESPONSE_CODE = "responsecode"
-
         private const val CODE_USER_CANCELED = 1
 
         private const val STATUS_PIX = 0

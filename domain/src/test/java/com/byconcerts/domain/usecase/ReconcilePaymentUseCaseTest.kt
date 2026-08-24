@@ -1,7 +1,6 @@
 package com.byconcerts.domain.usecase
 
 import com.byconcerts.core.common.AppResult
-import com.byconcerts.core.common.Clock
 import com.byconcerts.domain.error.DomainError
 import com.byconcerts.domain.model.PaymentError
 import com.byconcerts.domain.model.PaymentResult
@@ -21,7 +20,7 @@ class ReconcilePaymentUseCaseTest {
 
     private val purchaseRepo = mockk<PurchaseRepository>(relaxed = true)
     private val eventRepo = mockk<EventRepository>(relaxed = true)
-    private val useCase = ReconcilePaymentUseCase(purchaseRepo, eventRepo, Clock { 999L })
+    private val useCase = ReconcilePaymentUseCase(purchaseRepo, eventRepo) { 999L }
 
     @Test
     fun `aprovado marca APPROVED, guarda pagamento e baixa estoque`() = runTest {
@@ -72,7 +71,7 @@ class ReconcilePaymentUseCaseTest {
     @Test
     fun `callback duplicado em compra ja terminal e no-op idempotente`() = runTest {
         coEvery { purchaseRepo.findByIdempotencyKey("key-1") } returns
-            purchase(status = PurchaseStatus.APPROVED, payment = paymentInfo())
+                purchase(status = PurchaseStatus.APPROVED, payment = paymentInfo())
 
         val result = useCase("key-1", PaymentResult.Approved(paymentInfo()))
 
